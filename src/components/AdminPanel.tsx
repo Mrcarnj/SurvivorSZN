@@ -175,7 +175,8 @@ export default function AdminPanel({
 
           <h3 style={{ marginTop: 22 }}>Invite players</h3>
           <p className="note">
-            Only allowlisted emails can create an account. One per line or comma
+            Only allowlisted emails can create an account. Adding someone here
+            does not email them — send them the link yourself. One per line or comma
             separated.
           </p>
           <textarea

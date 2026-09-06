@@ -66,23 +66,48 @@ export async function clearPick(week: number) {
 
 /* ------------------------------------------------------- commissioner ops */
 
+/**
+ * Add people to the allowlist. Nothing is emailed — this only decides who is
+ * allowed to create an account. Tell them to go and sign in themselves.
+ *
+ * Accepts one per line or comma separated, either a bare address or
+ * "Ryan Fitzpatrick <ryan@example.com>". The name is worth giving: without it
+ * handle_new_user() falls back to the email local part, so ryan.fitz@gmail.com
+ * shows up on the board as "ryan.fitz".
+ */
 export async function inviteEmails(raw: string) {
   const { user } = await requireAdmin();
-  const emails = raw
-    .split(/[\s,;]+/)
-    .map((e) => e.trim().toLowerCase())
-    .filter((e) => e.includes("@"));
-  if (!emails.length) return { error: "No valid email addresses." };
+
+  const invites: { email: string; display_name: string | null }[] = [];
+  for (const chunk of raw.split(/[\n;,]+/)) {
+    const line = chunk.trim();
+    if (!line) continue;
+
+    const angled = line.match(/^(.*?)\s*<\s*([^>]+?)\s*>$/);
+    const email = (angled ? angled[2] : line).trim().toLowerCase();
+    if (!email.includes("@") || /\s/.test(email)) continue;
+
+    const name = angled?.[1]?.trim();
+    invites.push({ email, display_name: name || null });
+  }
+  if (!invites.length) return { error: "No valid email addresses." };
 
   const admin = supabaseAdmin();
-  const { error } = await admin
-    .from("allowlist")
-    .upsert(emails.map((email) => ({ email, invited_by: user.id })), {
-      onConflict: "email",
-    });
+  const { error } = await admin.from("allowlist").upsert(
+    invites.map((i) => ({ ...i, invited_by: user.id })),
+    { onConflict: "email" }
+  );
   if (error) return { error: error.message };
   revalidatePath("/admin");
-  return { ok: true, added: emails.length };
+
+  const named = invites.filter((i) => i.display_name).length;
+  return {
+    ok: true,
+    added: invites.length,
+    message:
+      `${invites.length} on the list (${named} with a display name). ` +
+      `Nothing was emailed — send them the link and have them sign in.`,
+  };
 }
 
 export async function grantRebuy(userId: string) {
