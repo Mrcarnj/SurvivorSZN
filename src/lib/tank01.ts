@@ -52,6 +52,10 @@ async function call(path: string, params: Record<string, string>) {
 
 const s = (v: unknown) => (v == null ? "" : String(v));
 const n = (v: unknown) => {
+  // Number("") is 0, not NaN — without the empty check an unplayed game would
+  // store 0-0 instead of null, which reads as a tie and, under house rules,
+  // kills everyone who picked either side.
+  if (v === null || v === undefined || String(v).trim() === "") return null;
   const x = Number(v);
   return Number.isFinite(x) ? x : null;
 };
@@ -82,10 +86,27 @@ function parseKickoff(g: RawGame): Date | null {
   return new Date(Date.UTC(y, mo - 1, d, hh + offset, mm));
 }
 
+/**
+ * Tank01 reports a finished game as "Completed", not "Final" — matching only
+ * on "final" left every played game looking scheduled, which would stop
+ * scoreWeek() from ever scoring a week.
+ *
+ * gameStatusCode is the more reliable signal (0 not started, 1 in progress,
+ * 2 completed), so it wins when present; the string is the fallback.
+ */
 function parseStatus(g: RawGame): NormalizedGame["status"] {
+  const code = s(g.gameStatusCode).trim();
+  if (code === "2") return "final";
+  if (code === "1") return "live";
+
   const raw = s(g.gameStatus ?? g.currentPeriod).toLowerCase();
-  if (raw.includes("final")) return "final";
-  if (raw.includes("progress") || raw.includes("half") || /q[1-4]/.test(raw))
+  if (raw.includes("final") || raw.includes("complet")) return "final";
+  if (
+    raw.includes("progress") ||
+    raw.includes("half") ||
+    raw.includes("quarter") ||
+    /q[1-4]/.test(raw)
+  )
     return "live";
   return "scheduled";
 }

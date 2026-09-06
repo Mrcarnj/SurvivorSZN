@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { SEASON } from "@/lib/pool";
+import { scoreWeekOnDb } from "@/lib/scoring";
 
 async function me() {
   const sb = await supabaseServer();
@@ -139,113 +140,19 @@ export async function grantRebuy(userId: string) {
  *   wipeout = every surviving player lost, so nobody drops a life and the
  *             following week becomes one-team-per-player
  */
+/**
+ * Commissioner-triggered scoring. The rules themselves live in
+ * scoreWeekOnDb() so the Tuesday cron runs identical logic.
+ */
 export async function scoreWeek(week: number, force = false) {
   await requireAdmin();
-  const admin = supabaseAdmin();
-
-  const { data: wk } = await admin
-    .from("weeks")
-    .select("*")
-    .eq("season", SEASON)
-    .eq("week", week)
-    .single();
-  if (!wk) return { error: "Unknown week." };
-  if (wk.scored) return { error: `Week ${week} is already scored.` };
-
-  const { data: games } = await admin
-    .from("games")
-    .select("home,away,home_score,away_score,status")
-    .eq("season", SEASON)
-    .eq("week", week);
-
-  const unfinished = (games ?? []).filter((g) => g.status !== "final");
-  if (unfinished.length && !force)
-    return {
-      error: `${unfinished.length} game(s) not final yet. Sync scores, or override.`,
-    };
-
-  // team -> W / L / T
-  const outcome = new Map<string, "W" | "L" | "T">();
-  for (const g of games ?? []) {
-    if (g.status !== "final" || g.home_score == null || g.away_score == null) continue;
-    if (g.home_score === g.away_score) {
-      outcome.set(g.home!, "T");
-      outcome.set(g.away!, "T");
-    } else if (g.home_score > g.away_score) {
-      outcome.set(g.home!, "W");
-      outcome.set(g.away!, "L");
-    } else {
-      outcome.set(g.away!, "W");
-      outcome.set(g.home!, "L");
-    }
-  }
-
-  const { data: entries } = await admin
-    .from("entries")
-    .select("user_id,lives,eliminated")
-    .eq("season", SEASON);
-  const { data: picks } = await admin
-    .from("picks")
-    .select("user_id,team_id")
-    .eq("season", SEASON)
-    .eq("week", week);
-
-  const pickBy = new Map((picks ?? []).map((p) => [p.user_id, p.team_id]));
-  const alive = (entries ?? []).filter((e) => !e.eliminated);
-
-  const losers = alive.filter((e) => {
-    const t = pickBy.get(e.user_id);
-    if (!t) return true; // no choice = loss
-    const r = outcome.get(t);
-    return r === "L" || r === "T" || r === undefined;
-  });
-
-  // stamp each pick's result for the season grid
-  for (const [userId, teamId] of pickBy) {
-    await admin
-      .from("picks")
-      .update({ result: outcome.get(teamId) ?? "L" })
-      .eq("season", SEASON)
-      .eq("week", week)
-      .eq("user_id", userId);
-  }
-
-  let message: string;
-  const wipeout = alive.length > 0 && losers.length === alive.length;
-
-  if (wipeout) {
-    await admin
-      .from("weeks")
-      .update({ exclusive: true })
-      .eq("season", SEASON)
-      .eq("week", week + 1);
-    message = `Wipeout. All ${alive.length} survivors lost, so no lives were deducted. Week ${
-      week + 1
-    } is one team per player, first come first served.`;
-  } else {
-    for (const e of losers) {
-      const lives = Math.max(0, e.lives - 1);
-      await admin
-        .from("entries")
-        .update({ lives, eliminated: lives === 0 })
-        .eq("season", SEASON)
-        .eq("user_id", e.user_id);
-    }
-    message = losers.length
-      ? `${losers.length} player(s) lost a life.`
-      : `Everyone survived week ${week}.`;
-  }
-
-  await admin
-    .from("weeks")
-    .update({ scored: true })
-    .eq("season", SEASON)
-    .eq("week", week);
+  const result = await scoreWeekOnDb(supabaseAdmin(), week, force);
+  if ("error" in result) return result;
 
   revalidatePath("/");
   revalidatePath("/season");
   revalidatePath("/admin");
-  return { ok: true, message };
+  return { ok: true as const, message: result.message };
 }
 
 export async function undoScoring(week: number) {
