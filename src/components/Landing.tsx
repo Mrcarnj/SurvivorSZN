@@ -17,7 +17,7 @@ export default function Landing() {
           <div className="brand">
             <h1>Hollydell Survivor Pool</h1>
             <div>
-              <span>2026 season · $50 buy-in · invite only</span>
+              <span>2026 season</span>
             </div>
           </div>
         </div>

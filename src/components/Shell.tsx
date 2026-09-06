@@ -31,7 +31,7 @@ export default function Shell({
           <div className="brand">
             <h1>Hollydell Survivor Pool</h1>
             <div>
-              <span>2026 season · {entrants} entries · $50 buy-in</span>
+              <span>2026 season</span>
             </div>
           </div>
           <LockClock lockAt={lockAt} week={week} serverNow={Date.now()} />
