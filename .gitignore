@@ -14,5 +14,5 @@ next-env.d.ts
 # Supabase CLI local state (linked project ref + pooler URL)
 **/supabase/.temp/
 
-# redundant snapshot of app/
+# redundant snapshot of the app source
 survivor-pool-app.zip
