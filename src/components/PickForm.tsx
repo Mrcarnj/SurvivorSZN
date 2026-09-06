@@ -49,8 +49,7 @@ export default function PickForm({
   const taken = new Set(takenIds);
   // Every team stays on the grid. Burned ones render struck through and
   // disabled rather than disappearing, so the grid doubles as your season
-  // roster and there's no separate list to keep in sync.
-  const remaining = teams.filter((t) => !used.has(t.id));
+  // roster — the X's are the count.
 
   if (eliminated)
     return <p className="note">You are out of lives. Ask the commissioner about a re-buy.</p>;
@@ -74,11 +73,12 @@ export default function PickForm({
 
   return (
     <div className="card box">
-      <p className="note" style={{ marginTop: 0 }}>
-        {currentPick
-          ? `You're on ${teams.find((t) => t.id === currentPick)?.name}. Change it any time before kickoff.`
-          : `${remaining.length} teams left to choose from.`}
-      </p>
+      {currentPick && (
+        <p className="note" style={{ marginTop: 0 }}>
+          You&apos;re on {teams.find((t) => t.id === currentPick)?.name}. Change it
+          any time before kickoff.
+        </p>
+      )}
 
       <div className="pickgrid">
         {teams.map((t) => {
