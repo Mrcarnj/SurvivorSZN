@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { grantRebuy, scoreWeek, undoScoring, inviteEmails } from "@/actions/pool";
+import {
+  grantRebuy,
+  scoreWeek,
+  undoScoring,
+  inviteEmails,
+  confirmChampion,
+} from "@/actions/pool";
 import { Hearts } from "./ui";
 import type { Entry, Profile } from "@/lib/pool";
 
@@ -21,6 +27,9 @@ export default function AdminPanel({
   entries,
   games,
   scored,
+  championName,
+  pendingChampionName,
+  rebuysOutstanding,
 }: {
   week: number;
   finalWeek: number;
@@ -28,6 +37,11 @@ export default function AdminPanel({
   entries: Entry[];
   games: GameRow[];
   scored: boolean;
+  /** Set once the pool is decided. */
+  championName: string | null;
+  /** Last player standing while a re-buy is still outstanding. */
+  pendingChampionName: string | null;
+  rebuysOutstanding: number;
 }) {
   const [log, setLog] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -58,6 +72,32 @@ export default function AdminPanel({
     <>
       {log && <div className="banner">{log}</div>}
       {err && <div className="banner alarm">{err}</div>}
+
+      {championName && (
+        <div className="banner">
+          <strong>{championName} has won the pool.</strong> Scoring is closed. Reopen
+          a week below if this needs undoing.
+        </div>
+      )}
+
+      {!championName && pendingChampionName && (
+        <div className="banner alarm">
+          <strong>{pendingChampionName} is the last player standing.</strong>{" "}
+          {rebuysOutstanding} eliminated player
+          {rebuysOutstanding === 1 ? "" : "s"} can still buy back in, so this
+          isn&apos;t final yet. Sell a re-buy below to keep the pool alive, or confirm
+          the win if nobody is coming back.
+          <div className="row" style={{ marginTop: 10 }}>
+            <button
+              className="btn"
+              disabled={pending}
+              onClick={() => run(() => confirmChampion())}
+            >
+              Confirm {pendingChampionName} as winner
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="cmd">
         <div className="card box">

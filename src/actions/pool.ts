@@ -91,9 +91,11 @@ export async function grantRebuy(userId: string) {
 
   const { data: season } = await admin
     .from("seasons")
-    .select("final_week")
+    .select("final_week,champion_user_id")
     .eq("year", SEASON)
     .single();
+  if (season?.champion_user_id)
+    return { error: "The pool is over — someone has already won." };
   const { data: weeks } = await admin
     .from("weeks")
     .select("week")
@@ -126,6 +128,12 @@ export async function grantRebuy(userId: string) {
     .eq("user_id", userId);
   if (error) return { error: error.message };
 
+  // They're back in, so whoever was provisionally last standing no longer is.
+  await admin
+    .from("seasons")
+    .update({ pending_champion_user_id: null })
+    .eq("year", SEASON);
+
   revalidatePath("/");
   revalidatePath("/admin");
   return { ok: true };
@@ -155,6 +163,54 @@ export async function scoreWeek(week: number, force = false) {
   return { ok: true as const, message: result.message };
 }
 
+/**
+ * Confirm a provisional winner.
+ *
+ * scoreWeekOnDb leaves the last player standing as *pending* when an
+ * eliminated player still holds an unused re-buy, since that player may yet
+ * buy back and keep the pool alive. This is the commissioner saying no one is
+ * buying back — the pool is over.
+ */
+export async function confirmChampion() {
+  await requireAdmin();
+  const admin = supabaseAdmin();
+
+  const { data: season } = await admin
+    .from("seasons")
+    .select("champion_user_id,pending_champion_user_id")
+    .eq("year", SEASON)
+    .single();
+
+  if (season?.champion_user_id)
+    return { error: "This pool already has a confirmed winner." };
+  if (!season?.pending_champion_user_id)
+    return { error: "Nobody is waiting to be confirmed as the winner." };
+
+  const { data: who } = await admin
+    .from("profiles")
+    .select("display_name")
+    .eq("id", season.pending_champion_user_id)
+    .single();
+
+  const { error } = await admin
+    .from("seasons")
+    .update({
+      champion_user_id: season.pending_champion_user_id,
+      pending_champion_user_id: null,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("year", SEASON);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  revalidatePath("/season");
+  revalidatePath("/admin");
+  return {
+    ok: true as const,
+    message: `${who?.display_name ?? "The last player standing"} is confirmed as the winner.`,
+  };
+}
+
 export async function undoScoring(week: number) {
   await requireAdmin();
   const admin = supabaseAdmin();
@@ -163,10 +219,25 @@ export async function undoScoring(week: number) {
     .update({ scored: false })
     .eq("season", SEASON)
     .eq("week", week);
+
+  // scoreWeekOnDb refuses to run once a champion is recorded, so reopening a
+  // week has to un-crown as well — otherwise the commissioner can reopen but
+  // never re-score.
+  await admin
+    .from("seasons")
+    .update({
+      champion_user_id: null,
+      pending_champion_user_id: null,
+      completed_at: null,
+    })
+    .eq("year", SEASON);
+
+  revalidatePath("/");
+  revalidatePath("/season");
   revalidatePath("/admin");
   return {
     ok: true,
     message:
-      "Week reopened. Lives were NOT restored — adjust them by hand if you re-score.",
+      "Week reopened and any crowned winner cleared. Lives were NOT restored — adjust them by hand if you re-score.",
   };
 }

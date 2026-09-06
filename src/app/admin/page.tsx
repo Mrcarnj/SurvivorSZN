@@ -19,8 +19,20 @@ export default async function AdminPage() {
       .eq("season", SEASON)
       .eq("week", week.week)
       .order("kickoff"),
-    sb.from("seasons").select("final_week").eq("year", SEASON).single(),
+    sb
+      .from("seasons")
+      .select("final_week,champion_user_id,pending_champion_user_id")
+      .eq("year", SEASON)
+      .single(),
   ]);
+
+  const nameOf = (id: string | null | undefined) =>
+    id ? (p.profiles.find((x) => x.id === id)?.display_name ?? "A player") : null;
+
+  // How many knocked-out players could still buy their way back in.
+  const rebuysOutstanding = p.entries.filter(
+    (e) => e.eliminated && !e.rebuy_used
+  ).length;
 
   return (
     <Shell
@@ -42,6 +54,9 @@ export default async function AdminPage() {
           entries={p.entries}
           games={games ?? []}
           scored={week.scored}
+          championName={nameOf(season?.champion_user_id)}
+          pendingChampionName={nameOf(season?.pending_champion_user_id)}
+          rebuysOutstanding={rebuysOutstanding}
         />
       </section>
     </Shell>
