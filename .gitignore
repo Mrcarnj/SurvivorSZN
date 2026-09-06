@@ -16,3 +16,5 @@ next-env.d.ts
 
 # redundant snapshot of the app source
 survivor-pool-app.zip
+.vercel
+.env*

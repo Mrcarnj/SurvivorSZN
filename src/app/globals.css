@@ -4,6 +4,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   background:var(--field);
   background-image:
@@ -12,31 +13,43 @@ body{
   color:var(--chalk);
   font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;
 }
 h1,h2,h3{font-family:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;font-weight:800;margin:0;line-height:.95}
 a{color:var(--flag)}
-.wrap{max-width:1080px;margin:0 auto;padding:0 16px 72px}
+.wrap{max-width:1080px;margin:0 auto;
+  padding:0 max(16px,env(safe-area-inset-right)) calc(72px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 header.board{background:#07170E;border-bottom:3px solid var(--flag);box-shadow:0 8px 30px rgba(0,0,0,.45)}
-.board-inner{max-width:1080px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.board-inner{max-width:1080px;margin:0 auto;
+  padding:calc(14px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
 .brand h1{font-size:34px}
 .brand span{font-size:12px;color:var(--chalk-dim);letter-spacing:.06em}
 .clock{text-align:right;font-variant-numeric:tabular-nums}
 .clock .t{font-family:"Big Shoulders Display",sans-serif;font-size:30px;font-weight:700;color:var(--flag);line-height:1}
 .clock.locked .t{color:var(--brick)}
 .clock .l{font-size:11.5px;color:var(--chalk-dim)}
-nav.tabs{max-width:1080px;margin:0 auto;padding:12px 16px 0;display:flex;gap:2px;overflow-x:auto}
+nav.tabs{max-width:1080px;margin:0 auto;
+  padding:12px max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+  display:flex;gap:2px;overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs a{background:transparent;border-bottom:3px solid transparent;color:var(--chalk-dim);
   font-family:"Big Shoulders Display",sans-serif;font-size:19px;font-weight:700;padding:6px 14px;white-space:nowrap;text-decoration:none}
 nav.tabs a.on{color:var(--chalk);border-bottom-color:var(--flag)}
+nav.tabs .lbl-short{display:none}
 section.panel{margin-top:26px}
 .panel>h2{font-size:26px;margin-bottom:2px}
 .panel>.sub{color:var(--chalk-dim);font-size:13px;margin-bottom:12px}
+.panel ul{padding-left:20px;margin:0}
 .card{background:var(--field-2);border:1px solid var(--line);border-radius:var(--radius)}
-.btn{font:600 13.5px/1 "IBM Plex Sans",sans-serif;background:var(--flag);color:#171003;border:0;border-radius:var(--radius);padding:10px 16px;cursor:pointer}
+.btn{font:600 13.5px/1 "IBM Plex Sans",sans-serif;background:var(--flag);color:#171003;border:0;
+  border-radius:var(--radius);padding:12px 16px;min-height:44px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;text-align:center;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-decoration:none}
 .btn.ghost{background:transparent;color:var(--chalk);border:1px solid var(--line)}
 .btn.danger{background:var(--brick);color:#fff}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-select,input,textarea{background:#07170E;color:var(--chalk);border:1px solid var(--line);border-radius:var(--radius);padding:9px 10px;font-family:inherit;font-size:14px;width:100%}
+select,input,textarea{background:#07170E;color:var(--chalk);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;font-family:inherit;font-size:16px;width:100%;max-width:100%}
 .note{font-size:12.5px;color:var(--chalk-dim)}
 .err{font-size:12.5px;color:var(--brick)}
 .hearts{display:inline-flex;gap:3px;vertical-align:middle}
@@ -77,7 +90,8 @@ select,input,textarea{background:#07170E;color:var(--chalk);border:1px solid var
 .roster .head .name{font-family:"Big Shoulders Display",sans-serif;font-size:21px;font-weight:700;flex:1}
 .roster .grid{display:flex;flex-wrap:wrap;gap:6px;padding:12px}
 .count{font-size:11.5px;color:var(--chalk-dim)}
-.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--field-2)}
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--field-2)}
 table.season{border-collapse:separate;border-spacing:0;min-width:100%}
 table.season th,table.season td{padding:6px;text-align:center;border-bottom:1px solid rgba(241,237,226,.07)}
 table.season thead th{font-family:"Big Shoulders Display",sans-serif;font-size:16px;color:var(--chalk-dim);background:#07170E;position:sticky;top:0;z-index:2}
@@ -102,11 +116,83 @@ td.cur,thead th.cur{background:rgba(245,192,67,.07)}
 .byetag{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--chalk-dim)}
 .usedtag{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--brick);opacity:.75}
 .taken{font-size:9px;color:var(--brick);font-weight:700}
-.banner{background:rgba(245,192,67,.1);border:1px solid rgba(245,192,67,.4);border-radius:var(--radius);padding:10px 12px;font-size:13px;margin-bottom:14px}
+.banner{background:rgba(245,192,67,.1);border:1px solid rgba(245,192,67,.4);border-radius:var(--radius);
+  padding:10px 12px;font-size:13px;margin-bottom:14px;overflow-wrap:anywhere}
 .banner.alarm{background:rgba(192,64,47,.12);border-color:rgba(192,64,47,.5)}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .cmd{display:grid;gap:14px;grid-template-columns:1fr}
 @media(min-width:760px){.cmd{grid-template-columns:1fr 1fr}}
 .box{padding:14px}
 .resrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(241,237,226,.07);flex-wrap:wrap}
-footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--chalk-dim)}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--chalk-dim);overflow-wrap:anywhere}
+
+/* --------------------------------------------------------------- phones */
+/* Everything above is the desktop scoreboard. Below 720px the same content
+   has to survive a 375px-wide screen, so the header stacks, the pick board
+   drops to two columns with the team name on its own line, and the type
+   scale comes down a step. */
+@media(max-width:720px){
+  body{font-size:14.5px}
+  .wrap{padding-bottom:calc(48px + env(safe-area-inset-bottom))}
+  section.panel{margin-top:20px}
+  .panel>h2{font-size:22px}
+  .panel>.sub{font-size:12.5px}
+
+  /* Brand over clock, each on its own full-width line. Side by side, the
+     34px title and the countdown fight for the same 340px. */
+  .board-inner{flex-direction:column;align-items:stretch;gap:6px}
+  .brand h1{font-size:25px}
+  .brand span{font-size:11px}
+  .clock{display:flex;align-items:baseline;justify-content:space-between;gap:10px;text-align:left}
+  .clock .t{font-size:22px;white-space:nowrap;flex:0 0 auto}
+  .clock .l{font-size:11px;text-align:right;min-width:0}
+
+  nav.tabs{padding-top:10px}
+  nav.tabs a{font-size:17px;padding:8px 10px}
+  nav.tabs .lbl-full{display:none}
+  nav.tabs .lbl-short{display:inline}
+
+  /* Player | lives on the first line, the pick underneath, so a team name
+     never has to survive in a 90px column. */
+  .prow{grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:5px;padding:11px 12px}
+  .prow .who{grid-column:1;grid-row:1}
+  .prow .lives{grid-column:2;grid-row:1;align-self:center}
+  .prow .pick{grid-column:1/-1;grid-row:2}
+  .prow .tname{font-size:12.5px;white-space:normal}
+  .prow.hdr{display:none}
+
+  .team{width:38px;height:38px}
+  .team img{width:29px;height:29px}
+
+  /* Grid rather than wrapped flex, so the 32 chips spread evenly across the
+     screen and the last row still lines up with the ones above it. */
+  .pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));
+    gap:12px 4px;justify-items:center}
+  .pickbtn{width:46px}
+  .box{padding:12px}
+
+  /* Buttons share a row two-up instead of stair-stepping one per line. */
+  .row{gap:8px}
+  .row .btn{flex:1 1 auto;min-width:calc(50% - 4px)}
+
+  table.season th,table.season td{padding:5px 4px}
+  table.season thead th{font-size:15px}
+  table.season th.name-col{min-width:112px;font-size:12px;padding-left:10px}
+  .roster .head .name{font-size:19px}
+  .roster .grid{gap:6px 5px;padding:10px}
+
+  .resrow{gap:8px}
+  .resrow .btn{min-height:40px;padding:9px 12px}
+  footer{margin-top:28px}
+}
+
+/* Very narrow phones (iPhone SE, 320px). */
+@media(max-width:360px){
+  .wrap{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .brand h1{font-size:22px}
+  .clock .t{font-size:19px}
+  nav.tabs{gap:0}
+  nav.tabs a{font-size:16px;padding:8px 8px}
+  .row .btn{min-width:100%}
+  table.season th.name-col{min-width:96px}
+}

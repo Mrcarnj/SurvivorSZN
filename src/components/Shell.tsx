@@ -16,12 +16,14 @@ export default function Shell({
   entrants: number;
   children: React.ReactNode;
 }) {
+  // Two labels per tab: the full one, and a short one for phones, where five
+  // full-length tabs scroll most of the row off the right edge.
   const tabs = [
-    ["week", "/", "This week"],
-    ["pick", "/pick", "Make your pick"],
-    ["season", "/season", "Season results"],
-    ["rules", "/rules", "Rules"],
-    ...(isAdmin ? [["admin", "/admin", "Commissioner"]] : []),
+    ["week", "/", "This week", "Week"],
+    ["pick", "/pick", "Make your pick", "My pick"],
+    ["season", "/season", "Season results", "Season"],
+    ["rules", "/rules", "Rules", "Rules"],
+    ...(isAdmin ? [["admin", "/admin", "Commissioner", "Commish"]] : []),
   ] as const;
 
   return (
@@ -37,9 +39,15 @@ export default function Shell({
           <LockClock lockAt={lockAt} week={week} serverNow={Date.now()} />
         </div>
         <nav className="tabs">
-          {tabs.map(([id, href, label]) => (
-            <Link key={id} href={href} className={tab === id ? "on" : ""}>
-              {label}
+          {tabs.map(([id, href, label, short]) => (
+            <Link
+              key={id}
+              href={href}
+              className={tab === id ? "on" : ""}
+              aria-current={tab === id ? "page" : undefined}
+            >
+              <span className="lbl-full">{label}</span>
+              <span className="lbl-short">{short}</span>
             </Link>
           ))}
         </nav>
