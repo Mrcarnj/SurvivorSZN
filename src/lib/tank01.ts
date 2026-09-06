@@ -96,8 +96,10 @@ function normalize(g: RawGame): NormalizedGame | null {
   const fromId = gameId.split("_")[1]?.split("@") ?? [];
   return {
     gameId,
-    week: n(g.gameWeek ?? g.week) ?? 0,
-    seasonType: s(g.seasonType || "reg"),
+    // Tank01 sends "Week 1", not 1 — Number() on that is NaN, which would make
+    // every game week 0 and get it filtered out by the sync route.
+    week: weekNumber(g.gameWeek ?? g.week),
+    seasonType: seasonTypeCode(g.seasonType),
     awayAbbr: s(g.away || fromId[0]).toUpperCase(),
     homeAbbr: s(g.home || fromId[1]).toUpperCase(),
     kickoff: parseKickoff(g),
@@ -134,6 +136,14 @@ export async function getWeekScores(opts: {
     topPerformers: "false",
   });
   return raw.map(normalize).filter((g): g is NormalizedGame => g !== null);
+}
+
+/** Tank01 sends "Regular Season"; the games table stores the short code. */
+function seasonTypeCode(v: unknown): string {
+  const raw = s(v).toLowerCase();
+  if (raw.includes("post")) return "post";
+  if (raw.includes("pre")) return "pre";
+  return "reg";
 }
 
 /** Tank01 week numbers occasionally arrive as "Week 3". */
