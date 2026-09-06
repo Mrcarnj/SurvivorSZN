@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# dependencies / build output
+node_modules/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets — never commit
+.env.local
+.env*.local
+
+# Supabase CLI local state (linked project ref + pooler URL)
+**/supabase/.temp/
+
+# redundant snapshot of app/
+survivor-pool-app.zip
