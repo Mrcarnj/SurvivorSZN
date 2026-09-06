@@ -1,7 +1,9 @@
 import Shell from "@/components/Shell";
 import PickForm from "@/components/PickForm";
 import { Hearts, TeamChip } from "@/components/ui";
-import { loadPool, usedTeams } from "@/lib/pool";
+import { loadPool, usedTeams, SEASON } from "@/lib/pool";
+import { supabaseServer } from "@/lib/supabase/server";
+import type { TeamOdds } from "@/components/PickForm";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,38 @@ export default async function PickPage() {
   const burnedSet = new Set(burned);
   const remaining = p.teams.filter((t) => !burnedSet.has(t.id));
 
+  // This week's games, keyed by team. A team with no entry here is on a bye:
+  // that is what drives the greyed-out BYE state, rather than a hardcoded list.
+  const sb = await supabaseServer();
+  const { data: games } = await sb
+    .from("games")
+    .select(
+      "home,away,home_team_ml,away_team_ml,home_team_spread,away_team_spread"
+    )
+    .eq("season", SEASON)
+    .eq("week", week.week);
+
+  // numeric(4,1) comes back from PostgREST as a string, so coerce explicitly.
+  const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  const odds: Record<string, TeamOdds> = {};
+  for (const g of games ?? []) {
+    if (g.home)
+      odds[g.home] = {
+        ml: num(g.home_team_ml),
+        spread: num(g.home_team_spread),
+        opponent: g.away,
+        home: true,
+      };
+    if (g.away)
+      odds[g.away] = {
+        ml: num(g.away_team_ml),
+        spread: num(g.away_team_spread),
+        opponent: g.home,
+        home: false,
+      };
+  }
+  const byeCount = p.teams.filter((t) => !odds[t.id]).length;
+
   // On a wipeout week, teams already claimed by someone else are off the board.
   const takenIds = week.exclusive
     ? p.picks
@@ -47,7 +81,8 @@ export default async function PickPage() {
         <h2>Your week {week.week} pick</h2>
         <div className="sub">
           Only you can see this until kickoff. Change it as often as you like
-          before then.
+          before then. Lines are DraftKings.
+          {byeCount > 0 && ` ${byeCount} team${byeCount === 1 ? "" : "s"} on bye.`}
         </div>
 
         {week.exclusive && (
@@ -65,6 +100,7 @@ export default async function PickPage() {
           currentPick={myPick?.team_id ?? null}
           locked={p.locked}
           eliminated={!!myEntry?.eliminated}
+          odds={odds}
         />
       </section>
 

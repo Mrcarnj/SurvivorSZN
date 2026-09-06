@@ -5,6 +5,21 @@ import { submitPick, clearPick } from "@/actions/pool";
 import { TeamChip } from "./ui";
 import type { Team } from "@/lib/pool";
 
+export type TeamOdds = {
+  ml: number | null;
+  spread: number | null;
+  opponent: string | null;
+  home: boolean;
+};
+
+/** -3.5 -> "-3.5", 7 -> "+7", 0 -> "PK", null -> "--". */
+const fmtSpread = (n: number | null) =>
+  n === null ? "--" : n === 0 ? "PK" : `${n > 0 ? "+" : ""}${n}`;
+
+/** American odds: -180 stays, 150 becomes "+150". */
+const fmtML = (n: number | null) =>
+  n === null ? "--" : `${n > 0 ? "+" : ""}${n}`;
+
 export default function PickForm({
   week,
   teams,
@@ -13,6 +28,7 @@ export default function PickForm({
   currentPick,
   locked,
   eliminated,
+  odds,
 }: {
   week: number;
   teams: Team[];
@@ -21,6 +37,8 @@ export default function PickForm({
   currentPick: string | null;
   locked: boolean;
   eliminated: boolean;
+  /** Keyed by team id. A team missing from this map is on a bye this week. */
+  odds: Record<string, TeamOdds>;
 }) {
   const [sel, setSel] = useState<string | null>(currentPick);
   const [msg, setMsg] = useState<string | null>(null);
@@ -61,17 +79,34 @@ export default function PickForm({
 
       <div className="pickgrid">
         {available.map((t) => {
+          const o = odds[t.id];
+          const bye = !o; // no game this week
           const isTaken = taken.has(t.id) && t.id !== currentPick;
+          const label = bye
+            ? `${t.name} — on bye this week`
+            : `${t.name} ${o.home ? "vs" : "@"} ${o.opponent?.toUpperCase() ?? ""}, spread ${fmtSpread(o.spread)}, moneyline ${fmtML(o.ml)}`;
           return (
             <button
               key={t.id}
-              className={`pickbtn${sel === t.id ? " sel" : ""}`}
-              disabled={isTaken || pending}
+              className={`pickbtn${sel === t.id ? " sel" : ""}${bye ? " bye" : ""}`}
+              disabled={bye || isTaken || pending}
               onClick={() => setSel(t.id)}
-              aria-label={t.name}
+              aria-label={label}
+              title={label}
             >
               <TeamChip team={t} />
-              {isTaken && <span className="taken">taken</span>}
+              <span className="odds">
+                {bye ? (
+                  <span className="byetag">BYE</span>
+                ) : isTaken ? (
+                  <span className="taken">TAKEN</span>
+                ) : (
+                  <>
+                    <span className="sp">{fmtSpread(o.spread)}</span>
+                    <span className="ml">{fmtML(o.ml)}</span>
+                  </>
+                )}
+              </span>
             </button>
           );
         })}

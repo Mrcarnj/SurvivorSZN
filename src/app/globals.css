@@ -87,12 +87,20 @@ table.season thead th.name-col{z-index:4}
 td.cur,thead th.cur{background:rgba(245,192,67,.07)}
 .cell-x{color:rgba(241,237,226,.18)}
 .cell-nc{font-size:9.5px;font-weight:700;color:var(--brick);line-height:1.1}
-.pickgrid{display:flex;flex-wrap:wrap;gap:8px}
-.pickbtn{background:none;border:0;padding:0;cursor:pointer;position:relative}
+.pickgrid{display:flex;flex-wrap:wrap;gap:10px 8px}
+.pickbtn{background:none;border:0;padding:0;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:4px;width:46px}
 .pickbtn[disabled]{cursor:not-allowed}
 .pickbtn[disabled] .team{filter:grayscale(1);opacity:.3}
 .pickbtn.sel .team{border-color:var(--flag);box-shadow:0 0 0 2px var(--flag)}
-.taken{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--brick);font-weight:700}
+/* moneyline + spread under each chip, in the pick grid only */
+.pickbtn .odds{display:flex;flex-direction:column;align-items:center;line-height:1.25;
+  font-size:9.5px;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.pickbtn .odds .sp{color:var(--chalk);font-weight:600}
+.pickbtn .odds .ml{color:var(--chalk-dim)}
+.pickbtn.sel .odds .sp{color:var(--flag)}
+.byetag{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--chalk-dim)}
+.taken{font-size:9px;color:var(--brick);font-weight:700}
 .banner{background:rgba(245,192,67,.1);border:1px solid rgba(245,192,67,.4);border-radius:var(--radius);padding:10px 12px;font-size:13px;margin-bottom:14px}
 .banner.alarm{background:rgba(192,64,47,.12);border-color:rgba(192,64,47,.5)}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
