@@ -1,6 +1,5 @@
 import Shell from "@/components/Shell";
 import PickForm from "@/components/PickForm";
-import { Hearts, TeamChip } from "@/components/ui";
 import { loadPool, usedTeams, SEASON } from "@/lib/pool";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { TeamOdds } from "@/components/PickForm";
@@ -27,9 +26,6 @@ export default async function PickPage() {
   const burned = [...usedTeams(p.picks, user.id, week.week, p.locked)].filter(
     (t) => t !== myPick?.team_id
   );
-  const burnedSet = new Set(burned);
-  const remaining = p.teams.filter((t) => !burnedSet.has(t.id));
-
   // This week's games, keyed by team. A team with no entry here is on a bye:
   // that is what drives the greyed-out BYE state, rather than a hardcoded list.
   const sb = await supabaseServer();
@@ -104,27 +100,6 @@ export default async function PickPage() {
         />
       </section>
 
-      <section className="panel">
-        <h2>Your teams</h2>
-        <div className="sub">
-          {remaining.length} of 32 still available. A red X means you&apos;ve
-          already burned it.
-        </div>
-        <div className="roster">
-          <div className="card">
-            <div className="head">
-              <span className="name">{p.me?.display_name ?? "You"}</span>
-              <Hearts entry={myEntry} />
-              <span className="count">{remaining.length} of 32 left</span>
-            </div>
-            <div className="grid">
-              {p.teams.map((t) => (
-                <TeamChip key={t.id} team={t} small used={burnedSet.has(t.id)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
     </Shell>
   );
 }

@@ -47,7 +47,10 @@ export default function PickForm({
 
   const used = new Set(usedIds);
   const taken = new Set(takenIds);
-  const available = teams.filter((t) => !used.has(t.id));
+  // Every team stays on the grid. Burned ones render struck through and
+  // disabled rather than disappearing, so the grid doubles as your season
+  // roster and there's no separate list to keep in sync.
+  const remaining = teams.filter((t) => !used.has(t.id));
 
   if (eliminated)
     return <p className="note">You are out of lives. Ask the commissioner about a re-buy.</p>;
@@ -74,29 +77,34 @@ export default function PickForm({
       <p className="note" style={{ marginTop: 0 }}>
         {currentPick
           ? `You're on ${teams.find((t) => t.id === currentPick)?.name}. Change it any time before kickoff.`
-          : `${available.length} teams left to choose from.`}
+          : `${remaining.length} teams left to choose from.`}
       </p>
 
       <div className="pickgrid">
-        {available.map((t) => {
+        {teams.map((t) => {
           const o = odds[t.id];
+          const isUsed = used.has(t.id);
           const bye = !o; // no game this week
           const isTaken = taken.has(t.id) && t.id !== currentPick;
-          const label = bye
-            ? `${t.name} — on bye this week`
-            : `${t.name} ${o.home ? "vs" : "@"} ${o.opponent?.toUpperCase() ?? ""}, spread ${fmtSpread(o.spread)}, moneyline ${fmtML(o.ml)}`;
+          const label = isUsed
+            ? `${t.name} — already used this season`
+            : bye
+              ? `${t.name} — on bye this week`
+              : `${t.name} ${o.home ? "vs" : "@"} ${o.opponent?.toUpperCase() ?? ""}, spread ${fmtSpread(o.spread)}, moneyline ${fmtML(o.ml)}`;
           return (
             <button
               key={t.id}
-              className={`pickbtn${sel === t.id ? " sel" : ""}${bye ? " bye" : ""}`}
-              disabled={bye || isTaken || pending}
+              className={`pickbtn${sel === t.id ? " sel" : ""}${bye && !isUsed ? " bye" : ""}`}
+              disabled={isUsed || bye || isTaken || pending}
               onClick={() => setSel(t.id)}
               aria-label={label}
               title={label}
             >
-              <TeamChip team={t} />
+              <TeamChip team={t} used={isUsed} />
               <span className="odds">
-                {bye ? (
+                {isUsed ? (
+                  <span className="usedtag">USED</span>
+                ) : bye ? (
                   <span className="byetag">BYE</span>
                 ) : isTaken ? (
                   <span className="taken">TAKEN</span>

@@ -106,7 +106,6 @@ export default async function SeasonPage() {
                 <div className="head">
                   <span className="name">{person.display_name}</span>
                   <Hearts entry={entry} />
-                  <span className="count">{32 - used.size} of 32 left</span>
                 </div>
                 <div className="grid">
                   {p.teams.map((t) => (

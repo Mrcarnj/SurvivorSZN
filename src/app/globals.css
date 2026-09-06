@@ -100,6 +100,7 @@ td.cur,thead th.cur{background:rgba(245,192,67,.07)}
 .pickbtn .odds .ml{color:var(--chalk-dim)}
 .pickbtn.sel .odds .sp{color:var(--flag)}
 .byetag{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--chalk-dim)}
+.usedtag{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--brick);opacity:.75}
 .taken{font-size:9px;color:var(--brick);font-weight:700}
 .banner{background:rgba(245,192,67,.1);border:1px solid rgba(245,192,67,.4);border-radius:var(--radius);padding:10px 12px;font-size:13px;margin-bottom:14px}
 .banner.alarm{background:rgba(192,64,47,.12);border-color:rgba(192,64,47,.5)}
