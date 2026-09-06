@@ -63,14 +63,29 @@ full season schedule**. That's your one `week=all` call.
 **6. Invite** the rest of the pool from the Commissioner tab. Anyone not on the
 allowlist is refused at signup — worth having when there's money in it.
 
-**7. Cron** (Vercel `vercel.json`):
+**7. Deploy to Vercel, then set the cron.** `vercel.json` is already in the repo:
 
 ```json
-{ "crons": [{ "path": "/api/cron/sync-scores", "schedule": "*/2 * * * *" }] }
+{ "crons": [
+  { "path": "/api/cron/sync-scores",              "schedule": "0 14 * * 2" },
+  { "path": "/api/admin/sync-schedule?week=all",  "schedule": "0 17 * * 2" },
+  { "path": "/api/cron/sync-odds",                "schedule": "0 20 * * 2" }
+] }
 ```
 
-Vercel sends no auth header, so either drop the `CRON_SECRET` check on that route or
-use a Supabase `pg_cron` job that passes the bearer token.
+All three run Tuesday, in that order, three hours apart. Order matters: scores
+must settle first so the open week advances, the schedule refresh then picks up
+flex moves, and odds are pulled last for the week that is now current. Vercel
+cron times are always UTC and Hobby projects fire anywhere inside the given
+hour, so the three-hour gaps are what keep them from overlapping.
+
+Setting a `CRON_SECRET` environment variable in Vercel makes it send
+`Authorization: Bearer <CRON_SECRET>` on every cron invocation — no extra work,
+and the endpoints already check for it. They also accept a signed-in
+commissioner, so any job can be forced from the browser.
+
+Hobby allows at most one run per day per expression; weekly is well inside
+that. Live in-game score polling would need Pro.
 
 ---
 

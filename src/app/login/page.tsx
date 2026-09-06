@@ -25,7 +25,7 @@ export default function Login() {
 
   return (
     <div className="wrap" style={{ maxWidth: 420, paddingTop: 80 }}>
-      <h1 style={{ fontSize: 40, marginBottom: 6 }}>Last Man Standing</h1>
+      <h1 style={{ fontSize: 40, marginBottom: 6 }}>Hollydell Survivor Pool</h1>
       <p className="note" style={{ marginBottom: 20 }}>
         Enter the email the commissioner has on file. We&apos;ll send a sign-in link — no
         password to remember.

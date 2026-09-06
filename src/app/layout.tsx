@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Last Man Standing",
+  title: "Hollydell Survivor Pool",
   description: "NFL survivor pool",
 };
 

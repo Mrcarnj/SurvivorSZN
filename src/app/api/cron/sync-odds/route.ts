@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getBettingOdds } from "@/lib/tank01";
 import { SEASON } from "@/lib/pool";
+import { isCronOrAdmin } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
+// These loop over every game in a week; the default function timeout is tight.
+export const maxDuration = 60;
 
 /**
  * GET /api/cron/sync-odds
@@ -28,26 +30,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const admin = supabaseAdmin();
 
-  // Either the cron secret or an admin session gets in, so the commissioner
-  // can force a refresh from the browser without knowing the secret.
-  const auth = req.headers.get("authorization");
-  let allowed =
-    !!process.env.CRON_SECRET && auth === `Bearer ${process.env.CRON_SECRET}`;
-  if (!allowed) {
-    const sb = await supabaseServer();
-    const {
-      data: { user },
-    } = await sb.auth.getUser();
-    if (user) {
-      const { data: profile } = await sb
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-      allowed = !!profile?.is_admin;
-    }
-  }
-  if (!allowed)
+  if (!(await isCronOrAdmin(req)))
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // ---- work out which calendar days to ask for ----

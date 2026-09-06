@@ -1,31 +1,23 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getWeeklySchedule } from "@/lib/tank01";
 import { SEASON } from "@/lib/pool";
+import { isCronOrAdmin } from "@/lib/cron-auth";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
- * POST /api/admin/sync-schedule?week=all
+ * GET|POST /api/admin/sync-schedule?week=all
  *
  * One call pulls every regular-season game. Run it in preseason, then again
  * weekly to catch flex-schedule moves. Sets weeks.lock_at to the earliest
  * kickoff of each week, which handles Thursday 8:15, the Friday Black Friday
  * game, and international Sunday-morning starts without hardcoding a time.
  */
-export async function POST(req: Request) {
-  const sb = await supabaseServer();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return NextResponse.json({ error: "not signed in" }, { status: 401 });
-
-  const { data: profile } = await sb
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.is_admin)
-    return NextResponse.json({ error: "commissioner only" }, { status: 403 });
+async function run(req: Request) {
+  if (!(await isCronOrAdmin(req)))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const week = new URL(req.url).searchParams.get("week") ?? "all";
   const admin = supabaseAdmin();
@@ -44,11 +36,14 @@ export async function POST(req: Request) {
       home: byAbbr.get(g.homeAbbr)!,
       away: byAbbr.get(g.awayAbbr)!,
       kickoff: g.kickoff?.toISOString() ?? null,
-      status: g.status,
-      home_score: g.homeScore,
-      away_score: g.awayScore,
       updated_at: new Date().toISOString(),
     }));
+  // Deliberately no status/home_score/away_score here. This endpoint owns the
+  // schedule; sync-scores owns results. getNFLGamesForWeek reports a played
+  // game as Final but carries no points, so upserting those columns would
+  // blank out stored finals on every refresh — leaving status='final' with
+  // null scores, which destroys the audit trail and makes a re-score count
+  // every team as a loss. Omitted columns are left untouched on conflict.
 
   if (rows.length) {
     const { error } = await admin.from("games").upsert(rows, { onConflict: "game_id" });
@@ -85,3 +80,7 @@ export async function POST(req: Request) {
     ].filter((a) => !byAbbr.has(a)),
   });
 }
+
+// POST from the commissioner's browser, GET so a scheduler can call it too.
+export const POST = run;
+export const GET = run;

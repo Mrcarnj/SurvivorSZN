@@ -15,7 +15,7 @@ export default function Landing() {
       <header className="board">
         <div className="board-inner">
           <div className="brand">
-            <h1>Last Man Standing</h1>
+            <h1>Hollydell Survivor Pool</h1>
             <div>
               <span>2026 season · $50 buy-in · invite only</span>
             </div>
