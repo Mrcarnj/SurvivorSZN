@@ -4,6 +4,7 @@
  * Endpoints used:
  *   GET /getNFLGamesForWeek?week={1..18|all}&seasonType=reg&season=2026   (Weekly Schedule)
  *   GET /getNFLScoresOnly?gameWeek={1..18}&seasonType=reg&season=2026     (live/final scores)
+ *   GET /getNFLBettingOdds?gameDate=YYYYMMDD&itemFormat=map               (moneyline + spread)
  *
  * Tank01 returns { statusCode, body } where body is sometimes an array and
  * sometimes an object keyed by gameID, so everything below normalizes to an array.
@@ -144,6 +145,52 @@ function seasonTypeCode(v: unknown): string {
   if (raw.includes("post")) return "post";
   if (raw.includes("pre")) return "pre";
   return "reg";
+}
+
+export type GameOdds = {
+  gameId: string;
+  homeAbbr: string;
+  awayAbbr: string;
+  homeML: number | null;
+  awayML: number | null;
+  homeSpread: number | null;
+  awaySpread: number | null;
+};
+
+/** "+150" -> 150, "-3.5" -> -3.5, "even"/""/missing -> null. */
+function odds(v: unknown): number | null {
+  const raw = s(v).trim();
+  if (!raw) return null;
+  if (/^even$/i.test(raw)) return 0;
+  const x = Number(raw.replace(/^\+/, ""));
+  return Number.isFinite(x) ? x : null;
+}
+
+/**
+ * Betting odds for every game on one calendar day (YYYYMMDD, Eastern).
+ *
+ * The feed carries eight sportsbooks per game; we read DraftKings only. A book
+ * is absent until it posts a line, so each field is independently nullable —
+ * a game with no odds yet still returns a row, with nulls.
+ */
+export async function getBettingOdds(gameDate: string): Promise<GameOdds[]> {
+  const raw = await call("getNFLBettingOdds", { gameDate, itemFormat: "map" });
+  return raw
+    .map((g): GameOdds | null => {
+      const gameId = s(g.gameID ?? g.gameId);
+      if (!gameId) return null;
+      const dk = (g.draftkings ?? {}) as Record<string, unknown>;
+      return {
+        gameId,
+        homeAbbr: s(g.homeTeam).toUpperCase(),
+        awayAbbr: s(g.awayTeam).toUpperCase(),
+        homeML: odds(dk.homeTeamML),
+        awayML: odds(dk.awayTeamML),
+        homeSpread: odds(dk.homeTeamSpread),
+        awaySpread: odds(dk.awayTeamSpread),
+      };
+    })
+    .filter((g): g is GameOdds => g !== null);
 }
 
 /** Tank01 week numbers occasionally arrive as "Week 3". */
