@@ -34,7 +34,7 @@ export default function Shell({
               <span>2026 season · {entrants} entries · $50 buy-in</span>
             </div>
           </div>
-          <LockClock lockAt={lockAt} week={week} />
+          <LockClock lockAt={lockAt} week={week} serverNow={Date.now()} />
         </div>
         <nav className="tabs">
           {tabs.map(([id, href, label]) => (

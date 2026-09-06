@@ -91,9 +91,22 @@ export const EmptyChip = ({ small }: { small?: boolean }) => (
 
 /* ----------------------------------------------------------- lock clock */
 
-export function LockClock({ lockAt, week }: { lockAt: string | null; week: number }) {
-  const [now, setNow] = useState(() => Date.now());
+export function LockClock({
+  lockAt,
+  week,
+  serverNow,
+}: {
+  lockAt: string | null;
+  week: number;
+  serverNow: number;
+}) {
+  // The countdown depends on the current time, which the server and the browser
+  // never agree on to the second — calling Date.now() in both places is a
+  // guaranteed hydration mismatch. Seeding from a prop means both renders start
+  // from the identical number; the interval then takes over on the client.
+  const [now, setNow] = useState(serverNow);
   useEffect(() => {
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
