@@ -1,6 +1,6 @@
 import Shell from "@/components/Shell";
 import { Hearts, TeamChip, CheckChip } from "@/components/ui";
-import { loadPool } from "@/lib/pool";
+import { loadPool, usedTeams } from "@/lib/pool";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +85,37 @@ export default async function SeasonPage() {
               })}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2>Teams used and remaining</h2>
+        <div className="sub">
+          All 32 teams, alphabetical. A red X means that player has burned it.
+        </div>
+        <div className="roster">
+          {p.profiles.map((person) => {
+            const used = usedTeams(p.picks, person.id, cur, p.locked);
+            const entry = p.entries.find((e) => e.user_id === person.id);
+            return (
+              <div
+                key={person.id}
+                className="card"
+                style={entry?.eliminated ? { opacity: 0.5 } : undefined}
+              >
+                <div className="head">
+                  <span className="name">{person.display_name}</span>
+                  <Hearts entry={entry} />
+                  <span className="count">{32 - used.size} of 32 left</span>
+                </div>
+                <div className="grid">
+                  {p.teams.map((t) => (
+                    <TeamChip key={t.id} team={t} small used={used.has(t.id)} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     </Shell>

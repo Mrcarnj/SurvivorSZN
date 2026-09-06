@@ -9,7 +9,7 @@ export default function Shell({
   entrants,
   children,
 }: {
-  tab: "week" | "season" | "rules" | "admin";
+  tab: "week" | "pick" | "season" | "rules" | "admin";
   week: number;
   lockAt: string | null;
   isAdmin: boolean;
@@ -18,6 +18,7 @@ export default function Shell({
 }) {
   const tabs = [
     ["week", "/", "This week"],
+    ["pick", "/pick", "Make your pick"],
     ["season", "/season", "Season results"],
     ["rules", "/rules", "Rules"],
     ...(isAdmin ? [["admin", "/admin", "Commissioner"]] : []),

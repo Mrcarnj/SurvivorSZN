@@ -1,11 +1,22 @@
+import Link from "next/link";
 import Shell from "@/components/Shell";
-import PickForm from "@/components/PickForm";
+import Landing from "@/components/Landing";
 import { Hearts, TeamChip, CheckChip, EmptyChip } from "@/components/ui";
-import { loadPool, usedTeams } from "@/lib/pool";
+import { loadPool } from "@/lib/pool";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function ThisWeek() {
+  // Signed-out visitors get the public landing page rather than a redirect, so
+  // the pool has a front door. Checked before loadPool() so we don't run six
+  // queries that RLS would return empty anyway.
+  const sb = await supabaseServer();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return <Landing />;
+
   const p = await loadPool();
   const week = p.week;
   if (!week)
@@ -16,21 +27,8 @@ export default async function ThisWeek() {
   const pickOf = (id: string) =>
     p.picks.find((x) => x.week === week.week && x.user_id === id) ?? null;
 
-  const myPick = p.user ? pickOf(p.user.id) : null;
-  const myEntry = p.user ? entryOf(p.user.id) : undefined;
-  const myUsed = p.user
-    ? [...usedTeams(p.picks, p.user.id, week.week, p.locked)].filter(
-        (t) => t !== myPick?.team_id
-      )
-    : [];
-
-  // On a wipeout week, teams already claimed by someone else are off the board.
-  const takenIds = week.exclusive
-    ? p.picks
-        .filter((x) => x.week === week.week && x.user_id !== p.user?.id)
-        .map((x) => x.team_id)
-    : [];
-
+  const myPick = pickOf(user.id);
+  const myEntry = entryOf(user.id);
   const alive = p.entries.filter((e) => !e.eliminated).length;
 
   return (
@@ -56,9 +54,18 @@ export default async function ThisWeek() {
         )}
         <div className="banner">
           {p.locked
-            ? "Picks are open. Everyone's team stays visible from here on."
+            ? "Picks are locked. Everyone's team stays visible from here on."
             : "Picks are hidden until kickoff. A check mark means that player is in."}
         </div>
+
+        {!p.locked && !myEntry?.eliminated && (
+          <div className="row" style={{ marginBottom: 14 }}>
+            <Link className="btn" href="/pick">
+              {myPick ? "Change your pick" : "Make your pick"}
+            </Link>
+            {myPick && <span className="note">You&apos;re in for week {week.week}.</span>}
+          </div>
+        )}
 
         <div className="card">
           <div className="prow hdr">
@@ -72,7 +79,7 @@ export default async function ThisWeek() {
             const pick = pickOf(person.id);
             const team = pick ? teamById.get(pick.team_id) : undefined;
             const out = entry?.eliminated;
-            const isYou = person.id === p.user?.id;
+            const isYou = person.id === user.id;
 
             let cell: React.ReactNode;
             if (out) {
@@ -127,51 +134,6 @@ export default async function ThisWeek() {
                 <div className="pick">{cell}</div>
                 <div className="lives">
                   <Hearts entry={entry} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>Make your pick</h2>
-        <div className="sub">Only you can see this until kickoff.</div>
-        <PickForm
-          week={week.week}
-          teams={p.teams}
-          usedIds={myUsed}
-          takenIds={takenIds}
-          currentPick={myPick?.team_id ?? null}
-          locked={p.locked}
-          eliminated={!!myEntry?.eliminated}
-        />
-      </section>
-
-      <section className="panel">
-        <h2>Teams used and remaining</h2>
-        <div className="sub">
-          All 32 teams, alphabetical. A red X means that player has burned it.
-        </div>
-        <div className="roster">
-          {p.profiles.map((person) => {
-            const used = usedTeams(p.picks, person.id, week.week, p.locked);
-            const entry = entryOf(person.id);
-            return (
-              <div
-                key={person.id}
-                className="card"
-                style={entry?.eliminated ? { opacity: 0.5 } : undefined}
-              >
-                <div className="head">
-                  <span className="name">{person.display_name}</span>
-                  <Hearts entry={entry} />
-                  <span className="count">{32 - used.size} of 32 left</span>
-                </div>
-                <div className="grid">
-                  {p.teams.map((t) => (
-                    <TeamChip key={t.id} team={t} small used={used.has(t.id)} />
-                  ))}
                 </div>
               </div>
             );
