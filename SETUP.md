@@ -1,4 +1,4 @@
-# Last Man Standing — NFL Survivor Pool
+# Hollydell Survivor Pool — NFL Survivor Pool
 
 Next.js 15 (App Router, React 19, TypeScript) · Supabase (Postgres + Auth + RLS) · Tank01 on RapidAPI.
 
