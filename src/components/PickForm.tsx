@@ -52,7 +52,7 @@ export default function PickForm({
   // roster — the X's are the count.
 
   if (eliminated)
-    return <p className="note">You are out of lives. Ask the commissioner about a re-buy.</p>;
+    return <p className="note">You are out. Ask the commissioner about the $25 buy-back.</p>;
 
   if (locked)
     return (

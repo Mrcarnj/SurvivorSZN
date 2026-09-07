@@ -100,7 +100,9 @@ Rules live in Postgres, not just in the UI, so nobody can curl their way around 
   work. This is enforced at the database, so opening devtools doesn't reveal anything.
 - **Wipeout weeks** — `weeks.exclusive` is mirrored onto each pick and covered by a
   partial unique index, making first-come-first-served race-proof.
-- **Re-buys** — server action checks `rebuy_used` and blocks from week 17 on.
+- **Buy-backs** — one life each; a single $25 buy-back per person. The server action
+  checks `rebuy_used` and blocks from week 17 on. A player on their buy-back life shows
+  a gold `$` instead of a heart.
 - **Scoring** — `scoreWeek()` in `src/actions/pool.ts`. Tie or no pick both count as a
   loss; if every survivor loses, no lives are deducted and next week goes exclusive.
 

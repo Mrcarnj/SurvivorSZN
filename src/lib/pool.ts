@@ -34,7 +34,8 @@ export type Profile = {
 export const isLocked = (w: Week | undefined) =>
   !!w?.lock_at && new Date(w.lock_at) <= new Date();
 
-export const maxLives = (e: Entry) => 2 + (e.rebuy_used ? 1 : 0);
+/** One life each, plus the one-time buy-back life if they've paid for it. */
+export const maxLives = (e: Entry) => 1 + (e.rebuy_used ? 1 : 0);
 
 /**
  * The live week is the lowest unscored week. Everything before it is history.

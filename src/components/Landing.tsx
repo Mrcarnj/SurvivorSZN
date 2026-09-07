@@ -27,7 +27,7 @@ export default function Landing() {
         <section className="panel">
           <h2>Pick one team a week. Survive.</h2>
           <div className="sub">
-            Two lives each. Lose them both and you&apos;re out.
+            One life each, plus a one-time $25 buy-back.
           </div>
 
           <div className="card box">
@@ -46,11 +46,14 @@ export default function Landing() {
         <section className="panel">
           <h2>House rules</h2>
           <ul style={{ maxWidth: "66ch", lineHeight: 1.8 }}>
-            <li>Everyone starts with two lives. Pick one team to win each week.</li>
+            <li>Everyone gets one life. Pick one team to win each week.</li>
             <li>A team can only be used once all season, by you.</li>
             <li>A loss costs a life. A tie counts as a loss.</li>
             <li>No pick in by kickoff is a loss and shows as NO CHOICE.</li>
-            <li>Out of lives, out of the pool.</li>
+            <li>
+              Lose your life and you&apos;re out — one $25 buy-back per person, all
+              season.
+            </li>
             <li>
               Picks stay hidden until kickoff. Before then the board only shows who
               has submitted, never which team.

@@ -149,9 +149,9 @@ export default function AdminPanel({
         </div>
 
         <div className="card box">
-          <h3>Lives and re-buys</h3>
+          <h3>Lives and buy-backs</h3>
           <p className="note">
-            $50 each, one per person, blocked from week {finalWeek} on.
+            $25 each, one per person, blocked from week {finalWeek} on.
           </p>
           {profiles.map((p) => {
             const e = entries.find((x) => x.user_id === p.id);
@@ -167,7 +167,7 @@ export default function AdminPanel({
                   disabled={pending || e?.rebuy_used || week >= finalWeek}
                   onClick={() => run(() => grantRebuy(p.id))}
                 >
-                  +1 life · $50
+                  Buy-back · $25
                 </button>
               </div>
             );

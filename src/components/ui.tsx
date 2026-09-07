@@ -3,32 +3,72 @@
 import { useEffect, useState } from "react";
 import type { Entry, Team } from "@/lib/pool";
 
-/* ---------------------------------------------------------------- hearts */
+/* --------------------------------------------------------- lives + coin */
 
 const HEART = ["0110110", "1111111", "1111111", "0111110", "0011100", "0001000"];
 
-export function Heart({ filled }: { filled: boolean }) {
-  const c = filled ? "#E5484D" : "rgba(241,237,226,.16)";
+/** Gold disc; the $ is knocked back out of it in the row below. */
+const COIN = ["0111110", "1111111", "1111111", "1111111", "1111111", "0111110"];
+const DOLLAR = ["0001000", "0011100", "0011000", "0001100", "0011100", "0001000"];
+
+function Pixels({ rows, fill, x = 0, y = 0 }: { rows: string[]; fill: string; x?: number; y?: number }) {
   return (
-    <svg width="16" height="14" viewBox="0 0 7 6" shapeRendering="crispEdges" aria-hidden>
-      {HEART.flatMap((row, y) =>
-        [...row].map((v, x) =>
-          v === "1" ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={c} /> : null
+    <>
+      {rows.flatMap((row, ry) =>
+        [...row].map((v, rx) =>
+          v === "1" ? (
+            <rect key={`${rx}-${ry}`} x={x + rx} y={y + ry} width="1" height="1" fill={fill} />
+          ) : null
         )
       )}
+    </>
+  );
+}
+
+const EMPTY = "rgba(241,237,226,.16)";
+
+export function Heart({ filled }: { filled: boolean }) {
+  return (
+    <svg width="16" height="14" viewBox="0 0 7 6" shapeRendering="crispEdges" aria-hidden>
+      <Pixels rows={HEART} fill={filled ? "#E5484D" : EMPTY} />
       {filled && <rect x="1" y="1" width="1" height="1" fill="rgba(255,255,255,.65)" />}
     </svg>
   );
 }
 
+/** The bought-back life: same pixel art language as the heart, but a coin. */
+export function Coin({ filled }: { filled: boolean }) {
+  return (
+    <svg width="16" height="14" viewBox="0 0 7 6" shapeRendering="crispEdges" aria-hidden>
+      {filled ? (
+        <>
+          <Pixels rows={COIN} fill="#F5C043" />
+          <Pixels rows={DOLLAR} fill="#1B1405" />
+          <rect x="2" y="0" width="1" height="1" fill="rgba(255,255,255,.55)" />
+        </>
+      ) : (
+        <Pixels rows={DOLLAR} fill={EMPTY} />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * One heart per player, and — once they have paid for the buy-back — a coin
+ * for that extra life. The coin sits first so a lit coin next to a spent heart
+ * reads as "this player is running on their buy-back life".
+ */
 export function Hearts({ entry }: { entry: Entry | undefined }) {
   if (!entry) return null;
-  const max = 2 + (entry.rebuy_used ? 1 : 0);
+  // Mirrors maxLives() in lib/pool, which is server-only and can't be imported here.
+  const max = 1 + (entry.rebuy_used ? 1 : 0);
+  const label = entry.rebuy_used
+    ? `${entry.lives} of ${max} lives left, buy-back used`
+    : `${entry.lives} of ${max} lives left`;
   return (
-    <span className="hearts" role="img" aria-label={`${entry.lives} of ${max} lives left`}>
-      {Array.from({ length: max }, (_, i) => (
-        <Heart key={i} filled={i < entry.lives} />
-      ))}
+    <span className="hearts" role="img" aria-label={label}>
+      {entry.rebuy_used && <Coin filled={entry.lives >= 1} />}
+      <Heart filled={entry.lives >= max} />
     </span>
   );
 }
