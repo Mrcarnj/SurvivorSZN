@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 /**
@@ -15,8 +16,17 @@ export default function Landing() {
       <header className="board">
         <div className="board-inner">
           <div className="brand">
-            <h1>Hollydell Survivor Pool</h1>
-            <div>
+            {/* Decorative: the crest repeats the wordmark next to it. */}
+            <Image
+              className="crest"
+              src="/logo.png"
+              alt=""
+              width={128}
+              height={128}
+              priority
+            />
+            <div className="brand-row">
+              <h1>Hollydell Survivor Pool</h1>
               <span>2026 season</span>
             </div>
           </div>

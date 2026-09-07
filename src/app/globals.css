@@ -22,6 +22,12 @@ a{color:var(--flag)}
 header.board{background:#07170E;border-bottom:3px solid var(--flag);box-shadow:0 8px 30px rgba(0,0,0,.45)}
 .board-inner{max-width:1080px;margin:0 auto;
   padding:calc(14px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+header.board .board-inner:last-child{padding-bottom:14px}
+.brand{--crest:52px;--crest-gap:12px;display:flex;align-items:center;gap:var(--crest-gap);min-width:0}
+/* Title and season sit on one line, sharing a baseline; the crest centres
+   on that line. Wraps to two lines only if the title has nowhere to go. */
+.brand-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+.brand .crest{width:var(--crest);height:var(--crest);flex:0 0 auto;object-fit:contain}
 .brand h1{font-size:34px}
 .brand span{font-size:12px;color:var(--chalk-dim);letter-spacing:.06em}
 .clock{text-align:right;font-variant-numeric:tabular-nums}
@@ -141,6 +147,7 @@ footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-si
   /* Brand over clock, each on its own full-width line. Side by side, the
      34px title and the countdown fight for the same 340px. */
   .board-inner{flex-direction:column;align-items:stretch;gap:6px}
+  .brand{--crest:42px;--crest-gap:10px}
   .brand h1{font-size:25px}
   .brand span{font-size:11px}
   .clock{display:flex;align-items:baseline;justify-content:space-between;gap:10px;text-align:left}
@@ -189,6 +196,7 @@ footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-si
 /* Very narrow phones (iPhone SE, 320px). */
 @media(max-width:360px){
   .wrap{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .brand{--crest:36px;--crest-gap:9px}
   .brand h1{font-size:22px}
   .clock .t{font-size:19px}
   nav.tabs{gap:0}
