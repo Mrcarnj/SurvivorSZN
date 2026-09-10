@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Shell from "@/components/Shell";
 import Landing from "@/components/Landing";
+import WeekResult, { type WeekOutcome } from "@/components/WeekResult";
 import { Hearts, TeamChip, CheckChip, EmptyChip } from "@/components/ui";
-import { loadPool } from "@/lib/pool";
+import { loadPool, SEASON } from "@/lib/pool";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,11 @@ export default async function ThisWeek() {
   const myEntry = entryOf(user.id);
   const alive = p.entries.filter((e) => !e.eliminated).length;
 
+  const last = p.weeks
+    .filter((w) => w.scored)
+    .sort((a, b) => b.week - a.week)[0];
+  const result = last && myEntry ? await weekOutcome(user.id, last.week, myEntry, p) : null;
+
   return (
     <Shell
       tab="week"
@@ -39,6 +45,9 @@ export default async function ThisWeek() {
       isAdmin={!!p.me?.is_admin}
       entrants={p.entries.length}
     >
+      {last && result && (
+        <WeekResult season={SEASON} week={last.week} userId={user.id} outcome={result} />
+      )}
       <section className="panel">
         <h2>Week {week.week} picks</h2>
         <div className="sub">
@@ -146,4 +155,54 @@ export default async function ThisWeek() {
       </footer>
     </Shell>
   );
+}
+
+type Pool = Awaited<ReturnType<typeof loadPool>>;
+
+/**
+ * How the latest scored week went for this player, or null if they weren't in
+ * it (knocked out in an earlier week).
+ *
+ * Under one-life rules a loss is always an elimination. A lost pick proves it
+ * on its own; a no-pick loss needs entries.eliminated_week (migration 0010),
+ * which is queried separately so a missing column can't break the board.
+ */
+async function weekOutcome(
+  userId: string,
+  week: number,
+  entry: Pool["entries"][number],
+  p: Pool
+): Promise<WeekOutcome | null> {
+  const sb = await supabaseServer();
+  const [{ data: stamp }, { data: season }] = await Promise.all([
+    sb
+      .from("entries")
+      .select("eliminated_week")
+      .eq("season", SEASON)
+      .eq("user_id", userId)
+      .maybeSingle(),
+    sb.from("seasons").select("final_week,champion_user_id").eq("year", SEASON).maybeSingle(),
+  ]);
+
+  const pick = p.picks.find((x) => x.week === week && x.user_id === userId);
+  // scoreWeekOnDb flags the week after a wipeout as exclusive.
+  const wipeout = !!p.weeks.find((w) => w.week === week + 1)?.exclusive;
+
+  const lost =
+    stamp?.eliminated_week === week ||
+    (!wipeout && (pick?.result === "L" || pick?.result === "T"));
+
+  if (lost) {
+    if (!entry.eliminated) return entry.rebuy_used ? "boughtBack" : null;
+    // Same rule as grantRebuy: re-buys close at final_week, and not at all
+    // once someone has been crowned.
+    const canBuyBack =
+      !entry.rebuy_used &&
+      !season?.champion_user_id &&
+      week + 1 < (season?.final_week ?? 17);
+    return canBuyBack ? "buyback" : "done";
+  }
+  if (!pick) return null;
+  if (pick.result === "W") return "survived";
+  return wipeout ? "wipeout" : null;
 }

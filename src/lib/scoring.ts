@@ -145,6 +145,14 @@ export async function scoreWeekOnDb(
         .update({ lives, eliminated: lives === 0 })
         .eq("season", SEASON)
         .eq("user_id", e.user_id);
+      // Separate write, error ignored: if migration 0010 hasn't been run the
+      // column is missing, and that must never stop the lives update above.
+      if (lives === 0)
+        await admin
+          .from("entries")
+          .update({ eliminated_week: week })
+          .eq("season", SEASON)
+          .eq("user_id", e.user_id);
     }
     message = losers.length
       ? `${losers.length} player(s) lost a life.`

@@ -245,6 +245,14 @@ export async function undoScoring(week: number) {
     .eq("season", SEASON)
     .eq("week", week);
 
+  // Un-stamp anyone this week knocked out, so the result popup doesn't report
+  // an elimination that's being undone. Error ignored for a pre-0010 schema.
+  await admin
+    .from("entries")
+    .update({ eliminated_week: null })
+    .eq("season", SEASON)
+    .eq("eliminated_week", week);
+
   // scoreWeekOnDb refuses to run once a champion is recorded, so reopening a
   // week has to un-crown as well — otherwise the commissioner can reopen but
   // never re-score.
